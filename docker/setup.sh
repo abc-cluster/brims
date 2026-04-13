@@ -39,8 +39,17 @@ $COMPOSE up -d
 
 # 4. Wait for MariaDB to be healthy
 echo ""
-echo "→ Waiting for MariaDB to be ready..."
+echo "→ Waiting for MariaDB to be ready (timeout: 60s)..."
+MAX_RETRIES=30
+RETRIES=0
 until $COMPOSE exec mariadb healthcheck.sh --connect --innodb_initialized > /dev/null 2>&1; do
+    RETRIES=$((RETRIES + 1))
+    if [ $RETRIES -ge $MAX_RETRIES ]; then
+        echo ""
+        echo "ERROR: MariaDB did not become healthy in time. Check logs with:"
+        echo "  docker compose logs mariadb"
+        exit 1
+    fi
     printf '.'
     sleep 2
 done
